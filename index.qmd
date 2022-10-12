@@ -13,7 +13,11 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ## Data Source
 
+The UFO data set contains over 80,000 reports of UFO sightings over the last century. This data includes entries where the location of the sighting was not found or blank (0.8146%) or have an erroneous or blank time (8.0237%). ([Kaggle Link](https://www.kaggle.com/datasets/NUFORC/ufo-sightings?select=scrubbed.csv))
+
 ### What I want to convey
+
+Just like the mapping one, I want to convey that just because a state has many sightings it doesn't mean that they have a higher duration (in seconds) of sightings. Also that despite previous beliefs, states on the coast have more sightings than the midwest states like Nebraska or Oklahoma.
 
 ### Functionality in the table
 
