@@ -1,0 +1,105 @@
+---
+title: "Assignment 4 - Tables"
+author: "Gabrielle Clary"
+format: 
+  html:
+    self-contains: true
+editor: visual
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Data Source
+
+The UFO data set contains over 80,000 reports of UFO sightings over the last century. This data includes entries where the location of the sighting was not found or blank (0.8146%) or have an erroneous or blank time (8.0237%). ([Kaggle Link](https://www.kaggle.com/datasets/NUFORC/ufo-sightings?select=scrubbed.csv))
+
+### What I want to convey
+
+Just like the mapping one, I want to convey that just because a state has many sightings it doesn't mean that they have a higher duration (in seconds) of sightings. Also that despite previous beliefs, states on the coast have more sightings than the midwest states like Nebraska or Oklahoma.
+
+### Functionality in the table
+
+I added trend lines for the overall sightings and average seconds duration over the years of the data set. Minutes was not included in the trend lines because the same line is created as the one for seconds, just on a smaller scale.
+
+### Formatting in the table
+
+The table does not include a year date since every number shown is from 2014, and the table includes a minutes column because we are displaying average number of sections a sighting had and having a unit of minutes makes the data easier to understand and digest.
+
+The font size is 18 to allow everything to fit in one screen without having to scroll, and a header was added to note that the data is from 2014.
+
+## Code
+
+```{r}
+# load data set and packages 
+library(dplyr)
+library(mapproj)
+library(tidyverse)
+library(usdata)
+library(ggplot2)
+library(DT)
+library(sparkline)
+library(kableExtra)
+
+setwd("~/Desktop/STAA566/Assignment4")
+sparkline(0)
+ufo <- read.csv("complete.csv", header = T)
+# grab only data points for the US
+ufo <- ufo[ufo$country == "us",]
+# remove data points without a state & duration
+ufo <- ufo[!(is.na(ufo$state) | ufo$state ==""),]
+ufo <- ufo[!(is.na(ufo$duration..seconds.) | ufo$duration..seconds. ==""),]
+# convert state to upper case - for matching on US Map data later
+ufo$state <- toupper(ufo$state)
+# get data summarizations
+ufoSummary <- ufo %>%
+  group_by(state, year) %>%
+  summarise(Total = n(), AvgDurSeconds = mean(duration..seconds.), 
+            AvgDurMin = mean(duration..seconds. / 60))
+
+ufoSummary2014 <- ufoSummary[ufoSummary$year == 2014,]
+
+# double check the lift join worked as expected
+# us_states_ufo %>% head(n=14)
+```
+
+Create and display table
+
+```{r}
+for(s in ufoSummary$state){
+  # vector of data for figure for sightings
+  state_sightings <- ufoSummary %>%
+    filter(state==s) %>%
+    arrange(year) %>%
+    pull(Total)
+  # add figure to data.frame
+  ufoSummary2014[which(ufoSummary2014$state == s),"plt_sightings"] <- spk_chr(state_sightings)
+  
+  # vector of data for figure for avg seconds
+  state_avgseconds <- ufoSummary %>%
+    filter(state==s) %>%
+    arrange(year) %>%
+    pull(AvgDurSeconds)
+  # add figure to data.frame
+  ufoSummary2014[which(ufoSummary2014$state == s),"plt_avgseconds"] <- spk_chr(state_avgseconds)
+}
+
+ktable <- ufoSummary2014 %>%
+  select(state, Total, plt_sightings, AvgDurSeconds,
+         plt_avgseconds, AvgDurMin) %>%
+  kbl(escape = FALSE,
+      col.names = c("State", "Total Sightings",
+                         "Sightings Trend",
+                         "Avg Sighting Duration In Seconds",
+                         "Second Duration Trend",
+                         "Avg Sighting Duration In Minutes"),
+      align = c("l","r","r","r","r","r","r"),
+      digits = 1,
+      caption = "UFO Data by US State for 2014") %>%
+  kable_styling(font_size=18, fixed_thead = TRUE)%>%
+  gsub("font-size: initial !important;",
+       "font-size: 20pt !important;",.)
+
+ktable
+```
